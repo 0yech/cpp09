@@ -1,24 +1,35 @@
 #include "PmergeMe.hpp"
-#include <iostream>
+#include <cstdlib>
 
-int main(int argc, char **argv)
+int main(int ac, char **av)
 {
-    if (argc < 2)
-    {
-        std::cerr << "Error" << std::endl;
+    if (ac < 2) {
+        std::cout << "Error: not enough arguments\n";
         return 1;
     }
 
-    try
-    {
-        PmergeMe sorter;
-        sorter.process(argc, argv);
-    }
-    catch (const std::exception &)
-    {
-        std::cerr << "Error" << std::endl;
-        return 1;
-    }
+    std::vector<int> numbers;
 
-    return 0;
+    for (int i = 1; i < ac; i++)
+    {
+        std::string s(av[i]);
+        for (size_t j = 0; j < s.size(); j++)
+        {
+            if (!isdigit(s[j]))
+            {
+                std::cout << "Error\n";
+                return (1);
+            }
+        }
+
+        long n = std::atol(av[i]);
+        if (n < 0 || n > 2147483647)
+        {
+            std::cout << "Error\n";
+            return (1);
+        }
+        numbers.push_back(n);
+    }
+    PmergeMe sorter;
+    sorter.sort(numbers);
 }

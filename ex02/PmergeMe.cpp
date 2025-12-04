@@ -1,195 +1,89 @@
 #include "PmergeMe.hpp"
-#include <iostream>
-#include <cstdlib>  // std::strtol
-#include <climits>  // INT_MAX
-#include <cctype>   // isdigit
-#include <algorithm>
-#include <ctime>
 
 PmergeMe::PmergeMe() {}
-
-PmergeMe::PmergeMe(const PmergeMe &other)
-{
-    (void)other;
-}
-
-PmergeMe &PmergeMe::operator=(const PmergeMe &other)
-{
-    (void)other;
-    return *this;
-}
-
 PmergeMe::~PmergeMe() {}
 
-std::deque<int> PmergeMe::mergeInsertSortDeque(const std::deque<int> &input)
+void PmergeMe::fordJohnson(vec &c)
 {
-    std::deque<int> big;
-    std::deque<int> small;
-
-    // make pairs
-    for (size_t i = 0; i < input.size(); i += 2)
-    {
-        if (i + 1 < input.size())
-        {
-            int a = input[i];
-            int b = input[i + 1];
-
-            if (a > b)
-            {
-                big.push_back(a);
-                small.push_back(b);
-            }
-            else
-            {
-                big.push_back(b);
-                small.push_back(a);
-            }
-        }
-        else
-        {
-            big.push_back(input[i]);
-        }
-    }
-
-    // sort big
-    std::sort(big.begin(), big.end());
-
-    // insert small
-    for (size_t i = 0; i < small.size(); ++i)
-    {
-        int value = small[i];
-        std::deque<int>::iterator pos =
-            std::lower_bound(big.begin(), big.end(), value);
-        big.insert(pos, value);
-    }
-
-    return big;
+    fordJohnsonImpl(c);
 }
 
-std::vector<int> PmergeMe::mergeInsertSortVector(const std::vector<int> &input)
+void PmergeMe::fordJohnson(deq &c)
 {
-    std::vector<int> big;
-    std::vector<int> small;
-
-    // Make pairs
-    for (size_t i = 0; i < input.size(); i += 2)
-    {
-        if (i + 1 < input.size())
-        {
-            int a = input[i];
-            int b = input[i + 1];
-
-            if (a > b)
-            {
-                big.push_back(a);
-                small.push_back(b);
-            }
-            else
-            {
-                big.push_back(b);
-                small.push_back(a);
-            }
-        }
-        else
-            big.push_back(input[i]);
-    }
-
-    std::sort(big.begin(), big.end());
-    
-    // Merge debug
-    std::cout << "[DEBUG] big: ";
-    for (size_t i = 0; i < big.size(); ++i) std::cout << big[i] << " ";
-    std::cout << "\n[DEBUG] small: ";
-    for (size_t i = 0; i < small.size(); ++i) std::cout << small[i] << " ";
-    std::cout << std::endl;
-    
-
-    // binary search + insert
-    for (size_t i = 0; i < small.size(); ++i)
-    {
-        int value = small[i];
-
-        // find insert pos
-        std::vector<int>::iterator pos =
-            std::lower_bound(big.begin(), big.end(), value);
-
-        big.insert(pos, value);
-    }
-
-    return big;
+    fordJohnsonImpl(c);
 }
 
-int PmergeMe::parseNumber(const std::string &s) const
+std::vector<size_t> PmergeMe::jacobSequence(size_t n)
 {
-    if (s.empty())
-        throw std::runtime_error("Error");
+    std::vector<size_t> jac;
+    if (n <= 1)
+        return jac;
 
-    // only digits check
-    for (size_t i = 0; i < s.size(); ++i)
+    // init jacob sequence
+    jac.push_back(1);
+    size_t j1 = 1, j2 = 1;
+
+    // stops when j2 >= n
+    while (j2 < n)
     {
-        if (!std::isdigit(s[i]))
-            throw std::runtime_error("Error");
+        size_t j = j2 + 2 * j1;
+        jac.push_back(j);
+        j1 = j2;
+        j2 = j;
     }
 
-    // avoid int max
-    long num = std::strtol(s.c_str(), NULL, 10);
+    // order stores the min insert order
+    std::vector<size_t> order;
+    size_t prev = 1;
 
-    if (num <= 0 || num > INT_MAX)
-        throw std::runtime_error("Error");
-
-    return static_cast<int>(num);
+    for (size_t i = 0; i < jac.size(); i++)
+    {
+        // set limit at n when highest jac value reached.
+        size_t limit = (jac[i] < n ? jac[i] : n);
+        for (size_t k = limit; k > prev; k--)
+            order.push_back(k - 1);
+        prev = limit;
+        if (limit == n)
+            break;
+    }
+    return order;
 }
 
-
-void PmergeMe::process(int argc, char **argv)
+void PmergeMe::printTime(double tVec, double tDeq, size_t size)
 {
-    // Parse & store in vectors
-    for (int i = 1; i < argc; ++i)
-    {
-        int value = parseNumber(argv[i]);
+    std::cout << "Time to process " << size
+              << " elements with std::vector : " << tVec << " us\n";
 
-        _vector.push_back(value);
-        _deque.push_back(value);
-    }
+    std::cout << "Time to process " << size
+              << " elements with std::deque  : " << tDeq << " us\n";
+}
 
-    // Before
+void PmergeMe::sort(const std::vector<int> &input)
+{
+    vec v(input.begin(), input.end());
+    deq d(input.begin(), input.end());
+
     std::cout << "Before: ";
-    for (size_t i = 0; i < _vector.size(); ++i)
-        std::cout << _vector[i] << " ";
-    std::cout << std::endl;
-    // vector sort
-    clock_t startVec = clock();
-    std::vector<int> sortedVec = mergeInsertSortVector(_vector);
-    clock_t endVec = clock();
-    double vectorTime = static_cast<double>(endVec - startVec) / CLOCKS_PER_SEC * 1e6;
-    _vector = sortedVec;
-    // After
+    for (size_t i = 0; i < v.size(); i++)
+        std::cout << v[i] << " ";
+    std::cout << "\n";
+
+    clock_t sv = clock();
+    fordJohnson(v);
+    clock_t ev = clock();
+
+    clock_t sd = clock();
+    fordJohnson(d);
+    clock_t ed = clock();
+
     std::cout << "After: ";
-    for (size_t i = 0; i < _vector.size(); ++i)
-        std::cout << _vector[i] << " ";
-    std::cout << std::endl;
+    for (size_t i = 0; i < v.size(); i++)
+        std::cout << v[i] << " ";
+    std::cout << "\n";
 
-
-
-    // DEQUE version
-    clock_t startDeq = clock();
-    std::deque<int> sortedDeq = mergeInsertSortDeque(_deque);
-    clock_t endDeq = clock();
-    double dequeTime = static_cast<double>(endDeq - startDeq) / CLOCKS_PER_SEC * 1e6;
-
-    // Times
-    std::cout << "Time to process a range of "
-              << sortedVec.size()
-              << " elements with std::vector : "
-              << vectorTime
-              << " us"
-              << std::endl;
-
-    std::cout << "Time to process a range of "
-              << sortedDeq.size()
-              << " elements with std::deque : "
-              << dequeTime
-              << " us"
-              << std::endl;
+    printTime(
+        (double)(ev - sv) / CLOCKS_PER_SEC * 1e6,
+        (double)(ed - sd) / CLOCKS_PER_SEC * 1e6,
+        v.size()
+    );
 }
-
