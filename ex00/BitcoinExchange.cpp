@@ -188,7 +188,10 @@ bool BitcoinExchange::isValidNumber(const std::string &valStr) const
 			frac = true;
 		}
 		else if (!isdigit(valStr[i]))
-			return false;
+		{
+			if (i != 0 || valStr[i] != '-')
+				return false;
+		}
 	}
 
 	return true;
