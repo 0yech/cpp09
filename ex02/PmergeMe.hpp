@@ -136,7 +136,7 @@ private:
     {
         size_t left = 0;
         size_t right = end;
-        while (left < r)
+        while (left < right)
         {
             size_t mid = (left + right) / 2;
             if (c[mid] < value)
